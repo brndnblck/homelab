@@ -257,6 +257,7 @@ make validate-templates  # Shows which templates are missing and how to create t
 - **Shell scripts**: POSIX-compliant, use `#!/bin/sh` shebang
 - **File permissions**: Explicit mode settings (0755 for executables, 0644 for configs)
 - **Security**: Credentials via templates, never commit secrets
+- **Template tokens**: Use `{{TOKEN_NAME}}` format for all placeholders
 - **SystemD services**: Follow naming pattern `container-{app}.service` or `task-{name}.service`
 - **File paths**: Use absolute paths in configurations (`/var/services/`, `/etc/systemd/system/`)
 

@@ -27,7 +27,7 @@ ExecStart=/usr/bin/podman run -h Black --replace --rm --name %n \
   --health-retries=3 \
   --health-start-period=120s \
   -e TZ=America/Los_Angeles \
-   -e PLEX_CLAIM=$PLEX_CLAIM \
+   -e PLEX_CLAIM={{PLEX_CLAIM}} \
   -p 32400:32400/tcp -p 8324:8324/tcp -p 32469:32469/tcp \
   -p 1900:1900/udp -p 32410:32410/udp -p 32412:32412/udp \
   -p 32413:32413/udp -p 32414:32414/udp \

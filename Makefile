@@ -78,7 +78,16 @@ generate: ## Generates templates for build process.
 	   output_dir="build/$$(dirname "$$relative_path")"; \
 	   output_file="$$output_dir/$$(basename "$$relative_path" .template)"; \
 	   mkdir -p "$$(dirname "$$output_file")"; \
-	   envsubst < "$$template" > "$$output_file"; \
+	   \
+	   # Process template with {{TOKEN}} format \
+	   cp "$$template" "$$output_file"; \
+	   grep -v '^#' default.env | grep -v '^$$' | while IFS='=' read -r key value; do \
+	     if [ -n "$$key" ] && [ -n "$${!key}" ]; then \
+	       # Escape special characters for sed \
+	       escaped_value=$$(printf '%s\n' "$${!key}" | sed 's/[[\.*^$$()+?{|]/\\&/g'); \
+	       sed -i '' "s/{{$$key}}/$$escaped_value/g" "$$output_file"; \
+	     fi; \
+	   done; \
 	 done
 
 	@printf "${GREEN}[DONE]${RESET}\n"
@@ -155,7 +164,7 @@ validate-butane: ## Validate Butane configuration files.
 		echo "dummy content" > "temp-validate/services/$$filename"; \
 	done
 	@cat users.yaml.template storage.yaml.template systemd.yaml.template > temp-config.yaml
-	@sed 's/\$$CORE_PASSWORD/dummy-hash/g; s/\$$CORE_SSH/dummy-key/g' temp-config.yaml > temp-validate/merged.yaml
+	@sed 's/{{CORE_PASSWORD}}/dummy-hash/g; s/{{CORE_SSH}}/dummy-key/g' temp-config.yaml > temp-validate/merged.yaml
 	@if command -v butane >/dev/null 2>&1; then \
 		butane -d temp-validate --strict temp-validate/merged.yaml > /dev/null && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
 	elif command -v podman >/dev/null 2>&1; then \
