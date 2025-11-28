@@ -1,0 +1,52 @@
+name: Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        # Update package list
+        sudo apt-get update
+        
+        # Install yamllint
+        pip3 install --user yamllint
+        
+        # Install shellcheck and systemd
+        sudo apt-get install -y shellcheck systemd
+        
+        # Install podman (Ubuntu 20.04+ has podman in repos)
+        sudo apt-get install -y podman || {
+          echo "Podman not available in repos, using docker as fallback"
+          sudo apt-get install -y docker.io
+        }
+        
+        # Add user bin to PATH for yamllint
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+        # Verify installations
+        yamllint --version || echo "yamllint not found"
+        shellcheck --version || echo "shellcheck not found"
+        systemd-analyze --version || echo "systemd-analyze not found"
+        podman --version || docker --version || echo "No container runtime found"
+
+    - name: Run lint checks
+      run: make lint
+
+    - name: Security scan
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: .
+        framework: yaml,secrets
+        quiet: true
+        soft_fail: false

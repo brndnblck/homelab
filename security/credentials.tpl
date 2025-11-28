@@ -1,0 +1,2 @@
+username=$NAS_USERNAME
+password=$NAS_PASSWORD
