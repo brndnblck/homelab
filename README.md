@@ -48,6 +48,26 @@ Boot target server from [CoreOS Live ISO](https://getfedora.org/coreos/download/
    sudo coreos-installer install /dev/sda --ignition-file /path/to/usb/latest
    ```
 
+### Creating New Resources
+
+The homelab includes template generators for quick resource creation:
+
+```bash
+# Generate container services
+make new service NAME=jellyfin IMAGE=jellyfin/jellyfin:latest PORTS=8096:8096
+
+# Generate scheduled tasks  
+make new timer NAME=backup DESCRIPTION="Daily backup" SCHEDULE="*-*-* 02:00:00"
+
+# Generate oneshot system tasks
+make new task NAME=deps SCRIPT=init-deps.sh REMAIN_ACTIVE=yes
+
+# Interactive mode (prompts for all values)
+make new service  # or timer, task
+```
+
+Generated files are placed in `services/` and need to be added to `systemd.yaml.tpl` for auto-start.
+
 ### Development
 
 ```bash
@@ -79,6 +99,7 @@ make validate-systemd   # SystemD service validation
 | `make generate` | Generates templates (credentials, users.yaml) using 1Password CLI |
 | `make clean` | Cleanup build artifacts and temporary files |
 | `make serve` | Builds and serves ignition file locally on port 8080 |
+| `make new [service,timer,task]` | Generate new resource templates |
 | `make lint` | Run all local linting and validation checks |
 | `make lint-yaml` | Lint YAML files with yamllint |
 | `make lint-shell` | Lint shell scripts with shellcheck |
@@ -94,6 +115,7 @@ make validate-systemd   # SystemD service validation
 ├── scripts/             # System scripts  
 ├── security/            # Credential templates
 ├── services/            # SystemD service definitions
+├── templates/           # Resource generation templates
 ├── default.env          # Centralized token configuration
 ├── storage.yaml.tpl     # File/directory provisioning
 ├── systemd.yaml.tpl     # Service management

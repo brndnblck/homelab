@@ -109,11 +109,11 @@ new: ## Create new resources: 'make new [service,timer,task]'
 	elif [ "$(filter task,$(MAKECMDGOALS))" ]; then \
 		./templates/scripts/new-task.sh "$(NAME)" "$(DESCRIPTION)" "$(SCRIPT)" "$(AFTER)" "$(REMAIN_ACTIVE)"; \
 	else \
-		echo "\n${WHITE}Generate new resources:${RESET}\n"; \
+		echo "\n${WHITE}Usage:${RESET}\n"; \
 		echo "  ${GREEN}make new service${RESET} NAME=jellyfin IMAGE=jellyfin/jellyfin:latest PORTS=8096:8096"; \
 		echo "  ${GREEN}make new timer${RESET} NAME=backup DESCRIPTION=\"Daily backup\" SCHEDULE=\"*-*-* 02:00:00\""; \
 		echo "  ${GREEN}make new task${RESET} NAME=deps SCRIPT=init-deps.sh REMAIN_ACTIVE=yes"; \
-		echo "\n${CYAN}Interactive mode (prompts for all values):${RESET}"; \
+		echo "\n${WHITE}Interactive Mode:${RESET}"; \
 		echo "  ${GREEN}make new service${RESET} | ${GREEN}make new timer${RESET} | ${GREEN}make new task${RESET}"; \
 	fi
 
