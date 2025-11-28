@@ -16,8 +16,8 @@ if [ -z "$NAME" ]; then
     exit 1
 fi
 
-if [ -f "services/task-$NAME.timer.tpl" ]; then
-    echo "WARNING: services/task-$NAME.timer.tpl already exists"
+if [ -f "services/task-$NAME.timer.template" ]; then
+    echo "WARNING: services/task-$NAME.timer.template already exists"
     exit 1
 fi
 
@@ -42,20 +42,20 @@ if [ -z "$SCHEDULE" ]; then
 fi
 
 # Generate the timer file
-echo "Generating task-$NAME.timer.tpl..."
+echo "Generating task-$NAME.timer.template..."
 
 # Start with base template
 sed -e "s/{{DESCRIPTION}}/$DESCRIPTION/g" \
     -e "s/{{SCHEDULE}}/$SCHEDULE/g" \
-    templates/base.timer.tpl > "services/task-$NAME.timer.tpl"
+    templates/base.timer.template > "services/task-$NAME.timer.template"
 
-echo "Created services/task-$NAME.timer.tpl"
+echo "Created services/task-$NAME.timer.template"
 echo ""
 echo "Next steps:"
 echo "  1. Create the task service (if needed):"
 echo "     make new task NAME=$NAME SCRIPT=$NAME.sh"
 echo ""
-echo "  2. Enable the timer in systemd.yaml.tpl:"
+echo "  2. Enable the timer in systemd.yaml.template:"
 echo "     - name: task-$NAME.timer"
 echo "       enabled: true"
 echo ""

@@ -75,12 +75,12 @@ make new service  # or timer, task
 
 2. **Review the generated template**:
    ```bash
-   cat services/container-jellyfin.service.tpl
+   cat services/container-jellyfin.service.template
    ```
 
-3. **Enable the service** by adding to `systemd.yaml.tpl`:
+3. **Enable the service** by adding to `systemd.yaml.template`:
    ```yaml
-   # Add this section to systemd.yaml.tpl
+   # Add this section to systemd.yaml.template
    - name: container-jellyfin.service
      enabled: true    # Auto-start on boot
    ```
@@ -164,9 +164,9 @@ make validate-systemd   # SystemD service validation
 ├── services/            # SystemD service definitions
 ├── templates/           # Resource generation templates
 ├── default.env          # Centralized token configuration
-├── storage.yaml.tpl     # File/directory provisioning
-├── systemd.yaml.tpl     # Service management
-├── users.yaml.tpl       # User account template
+├── storage.yaml.template     # File/directory provisioning
+├── systemd.yaml.template     # Service management
+├── users.yaml.template       # User account template
 └── Makefile            # Build automation
 ```
 
@@ -193,8 +193,8 @@ The CI pipeline automatically validates:
 
 **Generated service won't start after deployment:**
 ```bash
-# Check if service is enabled in systemd.yaml.tpl
-grep "container-myapp.service" systemd.yaml.tpl
+# Check if service is enabled in systemd.yaml.template
+grep "container-myapp.service" systemd.yaml.template
 
 # If missing, add it:
 - name: container-myapp.service
@@ -204,7 +204,7 @@ grep "container-myapp.service" systemd.yaml.tpl
 **Build fails with "template not found":**
 ```bash
 # Ensure the template exists
-ls services/container-myapp.service.tpl
+ls services/container-myapp.service.template
 
 # Regenerate if needed
 make new service NAME=myapp IMAGE=nginx
@@ -213,10 +213,10 @@ make new service NAME=myapp IMAGE=nginx
 **Port conflicts or networking issues:**
 ```bash
 # Check for port conflicts in other services
-grep "8080:8080" services/*.tpl
+grep "8080:8080" services/*.template
 
 # Verify network configuration
-grep "network" services/container-*.tpl
+grep "network" services/container-*.template
 ```
 
 **1Password authentication errors:**
@@ -240,7 +240,7 @@ make validate-systemd
 make validate-templates  # Check for missing service templates
 
 # Check specific service syntax
-systemd-analyze verify services/container-app.service.tpl
+systemd-analyze verify services/container-app.service.template
 ```
 
 **Missing template files:**

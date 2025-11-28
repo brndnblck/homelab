@@ -73,10 +73,10 @@ generate: ## Generates templates for build process.
 	   fi; \
 	 done); \
 	 \
-	 find . -name "*.tpl" -type f -not -path "./build/*" | while read -r template; do \
+	 find . -name "*.template" -type f -not -path "./build/*" | while read -r template; do \
 	   relative_path=$${template#./}; \
 	   output_dir="build/$$(dirname "$$relative_path")"; \
-	   output_file="$$output_dir/$$(basename "$$relative_path" .tpl)"; \
+	   output_file="$$output_dir/$$(basename "$$relative_path" .template)"; \
 	   mkdir -p "$$(dirname "$$output_file")"; \
 	   envsubst < "$$template" > "$$output_file"; \
 	 done
@@ -122,11 +122,11 @@ lint: lint-yaml lint-shell validate-butane validate-systemd validate-templates #
 lint-yaml: ## Lint YAML files with yamllint.
 	@printf "\n${WHITE}[LINT]${RESET} Checking YAML files... "
 	@if command -v yamllint >/dev/null 2>&1; then \
-		yamllint -c .yamllint.yml *.yaml.tpl services/ && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
+		yamllint -c .yamllint.yml *.yaml.template services/ && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
 	elif [ -f "$$HOME/.local/bin/yamllint" ]; then \
-		$$HOME/.local/bin/yamllint -c .yamllint.yml *.yaml.tpl services/ && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
+		$$HOME/.local/bin/yamllint -c .yamllint.yml *.yaml.template services/ && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
 	elif [ -f "/Users/brandon/Library/Python/3.9/bin/yamllint" ]; then \
-		/Users/brandon/Library/Python/3.9/bin/yamllint -c .yamllint.yml *.yaml.tpl services/ && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
+		/Users/brandon/Library/Python/3.9/bin/yamllint -c .yamllint.yml *.yaml.template services/ && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
 	else \
 		printf "${YELLOW}[SKIP] yamllint not found${RESET}\n"; \
 	fi
@@ -150,11 +150,11 @@ validate-butane: ## Validate Butane configuration files.
 	@echo "dummy content" > temp-validate/scripts/init-networks.sh
 	@echo "dummy content" > temp-validate/profile/starship.toml
 	@echo "dummy content" > temp-validate/profile/.zshrc
-	@for service in services/*.tpl; do \
-		filename=$$(basename "$$service" .tpl); \
+	@for service in services/*.template; do \
+		filename=$$(basename "$$service" .template); \
 		echo "dummy content" > "temp-validate/services/$$filename"; \
 	done
-	@cat users.yaml.tpl storage.yaml.tpl systemd.yaml.tpl > temp-config.yaml
+	@cat users.yaml.template storage.yaml.template systemd.yaml.template > temp-config.yaml
 	@sed 's/\$$CORE_PASSWORD/dummy-hash/g; s/\$$CORE_SSH/dummy-key/g' temp-config.yaml > temp-validate/merged.yaml
 	@if command -v butane >/dev/null 2>&1; then \
 		butane -d temp-validate --strict temp-validate/merged.yaml > /dev/null && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
@@ -172,7 +172,7 @@ validate-systemd: ## Validate SystemD service files.
 	@if command -v systemd-analyze >/dev/null 2>&1; then \
 		if [ "$$CI" = "true" ] || ! systemctl list-units rpm-ostreed.service >/dev/null 2>&1; then \
 			printf "${CYAN}Basic syntax validation (CI/non-CoreOS mode)${RESET}\n"; \
-			for service in services/*.tpl; do \
+			for service in services/*.template; do \
 				printf "  Checking $$service... "; \
 				if grep -E '^\[Unit\]|^\[Service\]|^\[Install\]|^\[Timer\]' "$$service" >/dev/null; then \
 					printf "${GREEN}OK${RESET}\n"; \
@@ -183,13 +183,13 @@ validate-systemd: ## Validate SystemD service files.
 			done; \
 			printf "${GREEN}[PASS]${RESET}\n"; \
 		else \
-			for service in services/*.tpl; do \
+			for service in services/*.template; do \
 				systemd-analyze verify "$$service" || exit 1; \
 			done && printf "${GREEN}[PASS]${RESET}\n" || printf "${RED}[FAIL]${RESET}\n"; \
 		fi; \
 	else \
 		printf "${CYAN}Basic syntax validation (systemd-analyze not available)${RESET}\n"; \
-		for service in services/*.tpl; do \
+		for service in services/*.template; do \
 			printf "  Checking $$service... "; \
 			if grep -E '^\[Unit\]|^\[Service\]|^\[Install\]|^\[Timer\]' "$$service" >/dev/null; then \
 				printf "${GREEN}OK${RESET}\n"; \
@@ -204,8 +204,8 @@ validate-systemd: ## Validate SystemD service files.
 validate-templates: ## Validate that referenced services have corresponding template files.
 	@printf "${WHITE}[LINT]${RESET} Validating template references... "
 	@missing_templates=""; \
-	for service in $$(grep -E '^\s*-\s*name:\s*' systemd.yaml.tpl | sed 's/.*name:[[:space:]]*//; s/[[:space:]]*$$//'); do \
-		template_file="services/$$service.tpl"; \
+	for service in $$(grep -E '^\s*-\s*name:\s*' systemd.yaml.template | sed 's/.*name:[[:space:]]*//; s/[[:space:]]*$$//'); do \
+		template_file="services/$$service.template"; \
 		if [ ! -f "$$template_file" ]; then \
 			if [ -z "$$missing_templates" ]; then \
 				missing_templates="$$service"; \
@@ -223,7 +223,7 @@ validate-templates: ## Validate that referenced services have corresponding temp
 				container-*) printf "  make new service NAME=$$(echo $$service | sed 's/container-//; s/.service$$//')\n" ;; \
 				task-*.timer) printf "  make new timer NAME=$$(echo $$service | sed 's/task-//; s/.timer$$//')\n" ;; \
 				task-*) printf "  make new task NAME=$$(echo $$service | sed 's/task-//; s/.service$$//')\n" ;; \
-				*) printf "  Create: services/$$service.tpl\n" ;; \
+				*) printf "  Create: services/$$service.template\n" ;; \
 			esac; \
 		done; \
 		exit 1; \

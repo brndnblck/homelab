@@ -18,8 +18,8 @@ if [ -z "$NAME" ]; then
     exit 1
 fi
 
-if [ -f "services/container-$NAME.service.tpl" ]; then
-    echo "WARNING: services/container-$NAME.service.tpl already exists"
+if [ -f "services/container-$NAME.service.template" ]; then
+    echo "WARNING: services/container-$NAME.service.template already exists"
     exit 1
 fi
 
@@ -50,13 +50,13 @@ if [ -z "$HEALTH_PORT" ] || [ "$HEALTH_PORT" = "8080" ]; then
 fi
 
 # Generate the service file
-echo "Generating container-$NAME.service.tpl..."
+echo "Generating container-$NAME.service.template..."
 
 # Start with base template
 sed -e "s/{{CONTAINER_NAME}}/$NAME/g" \
     -e "s|{{IMAGE_URL}}|$IMAGE|g" \
     -e "s/{{HEALTH_PORT}}/$HEALTH_PORT/g" \
-    templates/base.service.tpl > "services/container-$NAME.service.tpl"
+    templates/base.service.template > "services/container-$NAME.service.template"
 
 # Process ports and volumes
 temp_file=$(mktemp)
@@ -76,17 +76,17 @@ while IFS= read -r line; do
     else
         echo "$line"
     fi
-done < "services/container-$NAME.service.tpl" > "$temp_file"
+done < "services/container-$NAME.service.template" > "$temp_file"
 
-mv "$temp_file" "services/container-$NAME.service.tpl"
+mv "$temp_file" "services/container-$NAME.service.template"
 
-echo "Created services/container-$NAME.service.tpl"
+echo "Created services/container-$NAME.service.template"
 echo ""
 echo "Next steps:"
 echo "  1. Review the service file:"
-echo "     cat services/container-$NAME.service.tpl"
+echo "     cat services/container-$NAME.service.template"
 echo ""
-echo "  2. Enable auto-start by adding to systemd.yaml.tpl:"
+echo "  2. Enable auto-start by adding to systemd.yaml.template:"
 echo "     - name: container-$NAME.service"
 echo "       enabled: true"
 echo ""

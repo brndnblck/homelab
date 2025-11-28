@@ -18,8 +18,8 @@ if [ -z "$NAME" ]; then
     exit 1
 fi
 
-if [ -f "services/task-$NAME.service.tpl" ]; then
-    echo "WARNING: services/task-$NAME.service.tpl already exists"
+if [ -f "services/task-$NAME.service.template" ]; then
+    echo "WARNING: services/task-$NAME.service.template already exists"
     exit 1
 fi
 
@@ -65,7 +65,7 @@ else
 fi
 
 # Generate the task service file
-echo "Generating task-$NAME.service.tpl..."
+echo "Generating task-$NAME.service.template..."
 
 # Start with base template
 sed -e "s/{{DESCRIPTION}}/$DESCRIPTION/g" \
@@ -73,16 +73,16 @@ sed -e "s/{{DESCRIPTION}}/$DESCRIPTION/g" \
     -e "s/{{AFTER}}/$formatted_deps/g" \
     -e "s/{{REQUIRES}}/$formatted_deps/g" \
     -e "s/{{REMAIN_AFTER_EXIT}}/$remain_after_exit/g" \
-    templates/base.task.tpl > "services/task-$NAME.service.tpl"
+    templates/base.task.template > "services/task-$NAME.service.template"
 
-echo "Created services/task-$NAME.service.tpl"
+echo "Created services/task-$NAME.service.template"
 echo ""
 echo "Next steps:"
 echo "  1. Create the script file:"
 echo "     touch scripts/$SCRIPT_NAME"
 echo "     chmod +x scripts/$SCRIPT_NAME"
 echo ""
-echo "  2. Enable auto-start in systemd.yaml.tpl:"
+echo "  2. Enable auto-start in systemd.yaml.template:"
 echo "     - name: task-$NAME.service"
 echo "       enabled: true"
 echo ""
