@@ -35,6 +35,37 @@ help: print-header ## Show this help.
 		else if (/^## .*$$/) {printf "\n${WHITE}%s:${RESET}\n\n", substr($$1,4)} \
 		}' $(MAKEFILE_LIST)
 
+new: ## Create new resources: 'make new service', 'make new timer', or 'make new task' with optional params
+	@if [ "$(filter service,$(MAKECMDGOALS))" ]; then \
+		./templates/scripts/new-service.sh "$(NAME)" "$(IMAGE)" "$(PORTS)" "$(VOLUMES)" "$(HEALTH_PORT)"; \
+	elif [ "$(filter timer,$(MAKECMDGOALS))" ]; then \
+		./templates/scripts/new-timer.sh "$(NAME)" "$(DESCRIPTION)" "$(SCHEDULE)"; \
+	elif [ "$(filter task,$(MAKECMDGOALS))" ]; then \
+		./templates/scripts/new-task.sh "$(NAME)" "$(DESCRIPTION)" "$(SCRIPT)" "$(AFTER)" "$(REMAIN_ACTIVE)"; \
+	else \
+		echo "${YELLOW}Usage:${RESET}"; \
+		echo "  ${GREEN}make new service${RESET} [NAME=app IMAGE=repo/image PORTS=8080:8080,9090:9090 VOLUMES=/host:/container HEALTH_PORT=8080]"; \
+		echo "  ${GREEN}make new timer${RESET} [NAME=backup DESCRIPTION=\"Daily backup\" SCHEDULE=\"*-*-* 04:00:00\"]"; \
+		echo "  ${GREEN}make new task${RESET} [NAME=cleanup DESCRIPTION=\"System cleanup\" SCRIPT=cleanup.sh AFTER=network.target,shared-mount.service REMAIN_ACTIVE=yes]"; \
+		echo ""; \
+		echo "${CYAN}Examples:${RESET}"; \
+		echo "  make new service NAME=jellyfin IMAGE=jellyfin/jellyfin:latest PORTS=8096:8096"; \
+		echo "  make new timer NAME=cleanup DESCRIPTION=\"Daily cleanup\" SCHEDULE=\"*-*-* 02:00:00\""; \
+		echo "  make new task NAME=deps DESCRIPTION=\"Install dependencies\" SCRIPT=init-deps.sh AFTER=network-online.target REMAIN_ACTIVE=yes"; \
+		echo "  make new service  # Interactive mode"; \
+		echo "  make new timer    # Interactive mode"; \
+		echo "  make new task     # Interactive mode"; \
+	fi
+
+service: ## Used with 'make new service' - do not call directly
+	@: 
+
+timer: ## Used with 'make new timer' - do not call directly  
+	@:
+
+task: ## Used with 'make new task' - do not call directly
+	@:
+
 clean: ## Cleanup all temporary files and build artifacts.
 	@printf "\n${WHITE}[BUILD]${RESET} Cleaning up... "
 	@rm -rf build/
