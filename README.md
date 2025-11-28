@@ -2,7 +2,7 @@
 
 A CoreOS homelab configuration using Butane to generate Ignition files for automated server provisioning and container orchestration.
 
-![](https://github.com/brndnblck/homelab/.github/homelab.png)
+![](https://github.com/brndnblck/homelab/blob/2e5a9913ac7f3b1d400ab06de55c4b98226e84f0/.github/homelab.png)
 
 ## Features
 
