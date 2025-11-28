@@ -35,15 +35,6 @@ help: print-header ## Show this help.
 		else if (/^## .*$$/) {printf "\n${WHITE}%s:${RESET}\n\n", substr($$1,4)} \
 		}' $(MAKEFILE_LIST)
 
-service:
-	@: 
-
-timer:
-	@:
-
-task:
-	@:
-
 clean: ## Cleanup all temporary files and build artifacts.
 	@printf "\n${WHITE}[BUILD]${RESET} Cleaning up... "
 	@rm -rf build/
@@ -125,6 +116,15 @@ new: ## Create new resources: 'make new [service,timer,task]'
 		echo "\n${WHITE}Interactive Mode:${RESET}"; \
 		echo "  ${GREEN}make new service${RESET} | ${GREEN}make new timer${RESET} | ${GREEN}make new task${RESET}"; \
 	fi
+
+service:
+	@: 
+
+timer:
+	@:
+
+task:
+	@:
 
 lint: lint-yaml lint-shell validate-butane validate-systemd validate-templates ## Run all local linting and validation checks.
 
