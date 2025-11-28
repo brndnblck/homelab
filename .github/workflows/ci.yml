@@ -7,42 +7,76 @@ on:
     branches: [ main ]
 
 jobs:
-  lint-and-validate:
+  yaml-lint:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Install dependencies
+    
+    - name: Install yamllint
       run: |
-        # Update package list
-        sudo apt-get update
-        
-        # Install yamllint
         pip3 install --user yamllint
-        
-        # Install shellcheck and systemd
-        sudo apt-get install -y shellcheck systemd
-        
-        # Install podman (Ubuntu 20.04+ has podman in repos)
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    
+    - name: Run YAML linting
+      run: make lint-yaml
+
+  shell-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install shellcheck
+      run: sudo apt-get update && sudo apt-get install -y shellcheck
+    
+    - name: Run shell script linting
+      run: make lint-shell
+
+  template-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Validate template references
+      run: make validate-templates
+
+  butane-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install podman
+      run: |
+        sudo apt-get update
         sudo apt-get install -y podman || {
-          echo "Podman not available in repos, using docker as fallback"
+          echo "Podman not available, using docker"
           sudo apt-get install -y docker.io
         }
-        
-        # Add user bin to PATH for yamllint
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        
-        # Verify installations
-        yamllint --version || echo "yamllint not found"
-        shellcheck --version || echo "shellcheck not found"
-        systemd-analyze --version || echo "systemd-analyze not found"
-        podman --version || docker --version || echo "No container runtime found"
+    
+    - name: Validate Butane configs
+      run: make validate-butane
 
-    - name: Run lint checks
-      run: make lint
+  systemd-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install systemd
+      run: sudo apt-get update && sudo apt-get install -y systemd
+    
+    - name: Validate SystemD services
+      run: make validate-systemd
 
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
     - name: Security scan
       uses: bridgecrewio/checkov-action@master
       with:

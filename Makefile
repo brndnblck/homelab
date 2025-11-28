@@ -8,8 +8,8 @@ RESET  := $(shell tput -Txterm sgr0)
 
 .DEFAULT_GOAL := all
 
-.PHONY: all build serve clean generate help lint lint-yaml lint-shell validate-butane validate-systemd
-.ONESHELL: all build serve clean generate help lint lint-yaml lint-shell validate-butane validate-systemd
+.PHONY: all build serve clean generate help lint lint-yaml lint-shell validate-butane validate-systemd validate-templates
+.ONESHELL: all build serve clean generate help lint lint-yaml lint-shell validate-butane validate-systemd validate-templates
 
 print-header:
 	@echo "\n:::    :::  ::::::::  ::::    ::::  :::::::::: :::            :::     :::::::::  "
@@ -83,7 +83,7 @@ generate: ## Generates templates for build process.
 
 	@printf "${GREEN}[DONE]${RESET}\n"
 
-build: clean generate ## Primary build task. Validates and generates ignition file
+build: clean generate validate-templates ## Primary build task. Validates and generates ignition file
 	@printf "${WHITE}[BUILD]${RESET} Building and validating... "
 	@version=$$(date +%Y%m%dT%H%M%S); \
 	 cat build/users.yaml build/storage.yaml build/systemd.yaml > build/merged_$${version}.yaml; \
@@ -117,7 +117,7 @@ new: ## Create new resources: 'make new [service,timer,task]'
 		echo "  ${GREEN}make new service${RESET} | ${GREEN}make new timer${RESET} | ${GREEN}make new task${RESET}"; \
 	fi
 
-lint: lint-yaml lint-shell validate-butane validate-systemd ## Run all local linting and validation checks.
+lint: lint-yaml lint-shell validate-butane validate-systemd validate-templates ## Run all local linting and validation checks.
 
 lint-yaml: ## Lint YAML files with yamllint.
 	@printf "\n${WHITE}[LINT]${RESET} Checking YAML files... "
@@ -198,5 +198,35 @@ validate-systemd: ## Validate SystemD service files.
 				exit 1; \
 			fi; \
 		done; \
+		printf "${GREEN}[PASS]${RESET}\n"; \
+	fi
+
+validate-templates: ## Validate that referenced services have corresponding template files.
+	@printf "${WHITE}[LINT]${RESET} Validating template references... "
+	@missing_templates=""; \
+	for service in $$(grep -E '^\s*-\s*name:\s*' systemd.yaml.tpl | sed 's/.*name:[[:space:]]*//; s/[[:space:]]*$$//'); do \
+		template_file="services/$$service.tpl"; \
+		if [ ! -f "$$template_file" ]; then \
+			if [ -z "$$missing_templates" ]; then \
+				missing_templates="$$service"; \
+			else \
+				missing_templates="$$missing_templates, $$service"; \
+			fi; \
+		fi; \
+	done; \
+	if [ -n "$$missing_templates" ]; then \
+		printf "${RED}[FAIL]${RESET}\n"; \
+		printf "${RED}Missing template files for: $$missing_templates${RESET}\n"; \
+		printf "${YELLOW}Create missing templates with:${RESET}\n"; \
+		for service in $$(echo "$$missing_templates" | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$$//'); do \
+			case "$$service" in \
+				container-*) printf "  make new service NAME=$$(echo $$service | sed 's/container-//; s/.service$$//')\n" ;; \
+				task-*.timer) printf "  make new timer NAME=$$(echo $$service | sed 's/task-//; s/.timer$$//')\n" ;; \
+				task-*) printf "  make new task NAME=$$(echo $$service | sed 's/task-//; s/.service$$//')\n" ;; \
+				*) printf "  Create: services/$$service.tpl\n" ;; \
+			esac; \
+		done; \
+		exit 1; \
+	else \
 		printf "${GREEN}[PASS]${RESET}\n"; \
 	fi

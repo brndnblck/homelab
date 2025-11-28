@@ -151,6 +151,7 @@ make validate-systemd   # SystemD service validation
 | `make lint-shell` | Lint shell scripts with shellcheck |
 | `make validate-butane` | Validate Butane configuration files |
 | `make validate-systemd` | Validate SystemD service files |
+| `make validate-templates` | Validate that referenced services have template files |
 | `make help` | Show available targets with descriptions |
 
 ## Project Structure
@@ -236,9 +237,16 @@ grep "^[A-Z]" default.env
 make lint-yaml
 make validate-butane
 make validate-systemd
+make validate-templates  # Check for missing service templates
 
 # Check specific service syntax
 systemd-analyze verify services/container-app.service.tpl
+```
+
+**Missing template files:**
+```bash
+# If build fails with missing template references:
+make validate-templates  # Shows which templates are missing and how to create them
 ```
 
 
