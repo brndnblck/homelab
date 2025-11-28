@@ -50,7 +50,7 @@ Boot target server from [CoreOS Live ISO](https://getfedora.org/coreos/download/
 
 ### Creating New Resources
 
-The homelab includes template generators for quick resource creation:
+#### Quick Examples
 
 ```bash
 # Generate container services
@@ -66,7 +66,53 @@ make new task NAME=deps SCRIPT=init-deps.sh REMAIN_ACTIVE=yes
 make new service  # or timer, task
 ```
 
-Generated files are placed in `services/` and need to be added to `systemd.yaml.tpl` for auto-start.
+#### Complete Workflow
+
+1. **Generate the service**:
+   ```bash
+   make new service NAME=jellyfin IMAGE=jellyfin/jellyfin:latest PORTS=8096:8096
+   ```
+
+2. **Review the generated template**:
+   ```bash
+   cat services/container-jellyfin.service.tpl
+   ```
+
+3. **Enable the service** by adding to `systemd.yaml.tpl`:
+   ```yaml
+   # Add this section to systemd.yaml.tpl
+   - name: container-jellyfin.service
+     enabled: true    # Auto-start on boot
+   ```
+
+4. **Build and test**:
+   ```bash
+   make generate  # Process templates with credentials
+   make build     # Create ignition file and validate
+   make serve     # Serve for deployment at http://YOUR_IP:8080/latest
+   ```
+
+#### Service Types
+
+- **`service`**: Container applications (web apps, media servers, databases)
+- **`timer`**: Scheduled tasks with SystemD timer syntax
+- **`task`**: One-time setup scripts (dependencies, initialization)
+
+#### Common Patterns
+
+```bash
+# Media server with external access
+make new service NAME=plex IMAGE=plexinc/pms-docker PORTS=32400:32400
+
+# Internal service (no external ports)  
+make new service NAME=radarr IMAGE=linuxserver/radarr
+
+# Daily backup task
+make new timer NAME=backup SCHEDULE="*-*-* 04:00:00"
+
+# System initialization task
+make new task NAME=setup-storage SCRIPT=init-storage.sh REMAIN_ACTIVE=yes
+```
 
 ### Development
 
@@ -139,6 +185,63 @@ The CI pipeline automatically validates:
 - **Butane Configs**: Ignition generation validation
 - **Security Scan**: Secret detection and vulnerability analysis
 - **SystemD Services**: Service file validation
+
+## Troubleshooting
+
+### Common Issues
+
+**Generated service won't start after deployment:**
+```bash
+# Check if service is enabled in systemd.yaml.tpl
+grep "container-myapp.service" systemd.yaml.tpl
+
+# If missing, add it:
+- name: container-myapp.service
+  enabled: true
+```
+
+**Build fails with "template not found":**
+```bash
+# Ensure the template exists
+ls services/container-myapp.service.tpl
+
+# Regenerate if needed
+make new service NAME=myapp IMAGE=nginx
+```
+
+**Port conflicts or networking issues:**
+```bash
+# Check for port conflicts in other services
+grep "8080:8080" services/*.tpl
+
+# Verify network configuration
+grep "network" services/container-*.tpl
+```
+
+**1Password authentication errors:**
+```bash
+# Verify 1Password CLI is authenticated
+op account list
+
+# Test credential access
+op read "op://Private/PLEX_CLAIM/credential"
+
+# Check default.env format
+grep "^[A-Z]" default.env
+```
+
+**Template validation errors:**
+```bash
+# Run individual validation steps
+make lint-yaml
+make validate-butane
+make validate-systemd
+
+# Check specific service syntax
+systemd-analyze verify services/container-app.service.tpl
+```
+
+
 
 ## Code Style Guidelines
 
