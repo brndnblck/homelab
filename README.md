@@ -261,3 +261,5 @@ make validate-templates  # Shows which templates are missing and how to create t
 - **SystemD services**: Follow naming pattern `container-{app}.service` or `task-{name}.service`
 - **File paths**: Use absolute paths in configurations (`/var/services/`, `/etc/systemd/system/`)
 
+<!-- Test comment to trigger status checks -->
+
