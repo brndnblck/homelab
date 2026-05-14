@@ -20,18 +20,6 @@ if [ "$confirm" != "yes" ]; then
     exit 0
 fi
 
-# Store current SELinux state and temporarily disable for NAS restore
-SELINUX_STATE=$(getenforce)
-echo "[$(date)] Current SELinux state: $SELINUX_STATE"
-
-if [ "$SELINUX_STATE" = "Enforcing" ]; then
-    echo "[$(date)] Temporarily disabling SELinux for NAS restore..."
-    setenforce 0
-    
-    # Set trap to restore SELinux on any exit (success, failure, or signal)
-    trap 'echo "[$(date)] Restoring SELinux to: $SELINUX_STATE"; setenforce 1' EXIT INT TERM
-fi
-
 # Stop all container services before restore
 echo "[$(date)] Stopping container services..."
 systemctl stop container-*.service || true

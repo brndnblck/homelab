@@ -9,14 +9,12 @@ if ! mountpoint -q /mnt/services; then
     mkdir -p /var/services/plex /var/services/sonarr /var/services/radarr /var/services/lidarr /var/services/readarr /var/services/prowlarr /var/services/bazarr /var/services/sabnzbd /var/services/nginx /var/services/homebridge /var/services/n8n
 else
     # Restore configurations from backup
-    setenforce 0
     rsync -avh --progress \
       --exclude='/plex/config/Library/Application Support/Plex Media Server/Cache/**' \
       --exclude='/plex/config/Library/Application Support/Plex Media Server/Metadata/**' \
       --exclude='/plex/config/Library/Application Support/Plex Media Server/Logs/**' \
       --exclude='/plex/config/Library/Application Support/Plex Media Server/Crash Reports/**' \
       /mnt/services/ /var/services/
-    setenforce 1
 fi
 
 echo "[$(date)] Setting ownership and permissions..."
