@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+echo "[$(date)] Ensuring SELinux allows container CIFS access..."
+setsebool -P virt_use_samba on
+
 echo "[$(date)] Mounting shared folders from nas.lan..."
 
 # Mount shared folders
