@@ -32,6 +32,16 @@ storage:
       group:
         name: core
   files:
+    - path: /etc/ssh/sshd_config.d/30-enable-passwords.conf
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          PasswordAuthentication yes
+      user:
+        name: root
+      group:
+        name: root
     - path: /etc/smb/credentials
       mode: 0600
       overwrite: true
@@ -55,6 +65,15 @@ storage:
       overwrite: true
       contents:
         local: profile/.zshrc
+      user:
+        name: core
+      group:
+        name: core
+    - path: /var/home/core/.tmux.conf
+      mode: 0644
+      overwrite: true
+      contents:
+        local: profile/.tmux.conf
       user:
         name: core
       group:
