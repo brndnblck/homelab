@@ -69,6 +69,15 @@ storage:
         name: core
       group:
         name: core
+    - path: /var/home/core/.tmux.conf
+      mode: 0644
+      overwrite: true
+      contents:
+        local: profile/.tmux.conf
+      user:
+        name: core
+      group:
+        name: core
     - path: /var/scripts/backup.sh
       mode: 0755
       overwrite: true

@@ -73,6 +73,12 @@ alias pdc="podman-compose"
 # path
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 
+# colors
+export LS_COLORS='di=1;35:fi=0;37:ln=1;36:ex=1;32:*.txt=0;37:*.md=0;37:*.py=1;33:*.js=1;33:*.json=1;33:*.yml=1;33:*.yaml=1;33:*.sh=1;32:*.zsh=1;32:*.bash=1;32:*.fish=1;32'
+export CLICOLOR=1
+export LSCOLORS='ExGxCxDxBxegedabagaced'
+export EZA_COLORS='di=1;35:fi=37:ln=1;36:ex=1;32:*.txt=37:*.md=37:*.py=1;33:*.js=1;33:*.json=1;33:*.yml=1;33:*.yaml=1;33:*.sh=1;32:*.zsh=1;32'
+
 # automatically attach to tmux session on SSH login
 if [[ -z "$TMUX" ]] && [ "$SSH_CONNECTION" != "" ]; then
     # define the name of the tmux session
@@ -93,3 +99,4 @@ zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
 # enable menu-based selection of completion options
 zstyle ':completion:*' menu select
+zstyle ':completion:*' list-colors ''
