@@ -31,6 +31,20 @@ jobs:
           chmod 755 /usr/local/bin/butane
       - name: Validate real provisioning inputs and backup behavior
         run: make lint
+  # Preserve the required check names while running the full suite once.
+  required-checks:
+    name: ${{ matrix.check }}
+    needs: validate
+    if: always()
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        check: [yaml-lint, shell-lint, template-validation, butane-validation, systemd-validation]
+    steps:
+      - name: Require successful validation
+        env:
+          VALIDATION_RESULT: ${{ needs.validate.result }}
+        run: test "$VALIDATION_RESULT" = success
   security-scan:
     runs-on: ubuntu-latest
     steps:
