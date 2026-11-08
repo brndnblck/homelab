@@ -62,6 +62,15 @@ class ProvisioningTests(unittest.TestCase):
                 documents[0]["passwd"]["users"][0]["ssh_authorized_keys"], [tokens["CORE_SSH"]]
             )
 
+    def test_container_without_cgroup_delegation_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            render(directory, values(dummy=True))
+            unit = directory / "services/container-lidarr.service"
+            unit.write_text(unit.read_text().replace("Delegate=yes\n", ""))
+            with self.assertRaisesRegex(ValueError, "Missing container cgroup delegation"):
+                validate(directory)
+
 
 class StorageTests(unittest.TestCase):
     def test_sab_preserves_credentials_and_nested_options(self) -> None:

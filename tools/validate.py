@@ -43,6 +43,8 @@ def validate(directory: Path) -> None:
             if not (directory / "services" / service).is_file():
                 raise ValueError(f"Timer references missing service: {path.name}")
         if path.name.startswith("container-"):
+            if parser.get("Service", "Delegate", fallback="") != "yes":
+                raise ValueError(f"Missing container cgroup delegation: {path.name}")
             text = path.read_text()
             for share in re.findall(r"-v /mnt/([a-z]+):", text):
                 if (
