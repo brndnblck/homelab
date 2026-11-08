@@ -1,0 +1,9 @@
+[Unit]
+Description=Remove Old Unused Rootful Container Images
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/homelab/storage.env
+ExecStart=/usr/bin/sh /var/scripts/prune-images.sh
+Nice=19
+IOSchedulingClass=idle

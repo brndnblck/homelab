@@ -1,0 +1,14 @@
+[Unit]
+Description=NAS TV
+Wants=network-online.target
+After=network-online.target
+
+[Mount]
+What=//nas.lan/tv
+Where=/var/mnt/tv
+Type=cifs
+Options=vers=3.0,credentials=/etc/smb/credentials,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,noperm,noserverino
+TimeoutSec=30
+
+[Install]
+WantedBy=remote-fs.target

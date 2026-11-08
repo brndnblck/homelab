@@ -2,23 +2,24 @@
 Description=Radarr
 After=podman.service task-shared.service task-networks.service
 Requires=podman.service task-shared.service task-networks.service
+RequiresMountsFor=/var/mnt/movies
+BindsTo=var-mnt-movies.mount
+After=var-mnt-movies.mount
+StartLimitBurst=3
+StartLimitIntervalSec=300s
 
 [Service]
+Delegate=yes
+ExecStop=/usr/bin/podman stop --ignore --time 25 %n
 TimeoutStopSec=30
 TimeoutStartSec=120
 Type=simple
 Restart=on-failure
 RestartSec=10s
-StartLimitBurst=3
-StartLimitInterval=300s
 StandardOutput=journal
 StandardError=journal
-ExecStartPre=/usr/bin/podman pull lscr.io/linuxserver/radarr:latest
-ExecStart=/usr/bin/podman run --replace --rm --name %n --cgroups=split \
-  --user 1000:1000 \
-  --read-only \
-  --cap-drop=ALL \
-  --tmpfs /tmp \
+ExecStartPre=/usr/bin/sh /var/scripts/check-shares.sh movies
+ExecStart=/usr/bin/podman run --pull=missing --replace --rm --name %n --cgroups=split \
   --network internal-net \
   --health-cmd="curl -f http://localhost:7878 || exit 1" \
   --health-interval=30s \
@@ -26,9 +27,11 @@ ExecStart=/usr/bin/podman run --replace --rm --name %n --cgroups=split \
   --health-retries=3 \
   --health-start-period=120s \
   -e TZ=America/Los_Angeles \
+  -e PUID=911 -e PGID=911 \
+  -p 8083:7878 \
   -v /var/services/radarr:/config:z \
   -v /var/downloads:/downloads:z \
-  -v /mnt/movies:/movies:z \
+  -v /mnt/movies:/movies \
   lscr.io/linuxserver/radarr:latest
 
 [Install]

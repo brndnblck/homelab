@@ -1,34 +1,58 @@
 #!/bin/sh
-set -e
+set -eu
 
-echo "[$(date)] Syncing service configuration from backup..."
+# shellcheck source=state-common.sh
+. /var/scripts/state-common.sh
+exec 9>/run/homelab-state.lock
+flock --nonblock 9
+check_backup_mount
+mkdir -p /var/lib/homelab
+prepared=/var/lib/homelab/services-prepared
 
-# Check if backup source is available
-if ! mountpoint -q /mnt/services; then
-    echo "[$(date)] WARNING: /mnt/services not mounted, creating fresh directories"
-    mkdir -p /var/services/plex /var/services/sonarr /var/services/radarr /var/services/lidarr /var/services/readarr /var/services/prowlarr /var/services/bazarr /var/services/sabnzbd /var/services/nginx /var/services/homebridge /var/services/n8n
-else
-    # Restore configurations from backup
-    rsync -avh --progress \
-      --exclude='/plex/config/Library/Application Support/Plex Media Server/Cache/**' \
-      --exclude='/plex/config/Library/Application Support/Plex Media Server/Metadata/**' \
-      --exclude='/plex/config/Library/Application Support/Plex Media Server/Logs/**' \
-      --exclude='/plex/config/Library/Application Support/Plex Media Server/Crash Reports/**' \
-      /mnt/services/ /var/services/
+# Preparing state and starting units are separate, so a failed start never restores again.
+if [ ! -e "$prepared" ]; then
+	if [ -n "$(find "$SERVICES" -mindepth 1 -print -quit)" ]; then
+		echo "Existing service data found. Review it and explicitly adopt it before initialization." >&2
+		exit 1
+	fi
+	if [ -f "$BACKUPS/latest" ]; then
+		check_snapshot "$(cat "$BACKUPS/latest")"
+		restore_snapshot
+	else
+		while IFS= read -r service; do
+			if [ -n "$service" ] && [ -d "/mnt/services/$service" ]; then
+				echo 'Legacy NAS backup found. Create a verified snapshot before provisioning.' >&2
+				exit 1
+			fi
+		done </etc/homelab/services
+	fi
+	while IFS= read -r service; do
+		[ -n "$service" ] || continue
+		if [ ! -d "$SERVICES/$service" ]; then
+			case "$service" in
+			bazarr | lidarr | prowlarr | radarr | readarr | sabnzbd | sonarr)
+				uid=911
+				gid=911
+				;;
+			nginx)
+				uid=0
+				gid=0
+				;;
+			*)
+				uid=1000
+				gid=1000
+				;;
+			esac
+			install -d -m 0755 -o "$uid" -g "$gid" "$SERVICES/$service"
+		fi
+	done </etc/homelab/services
+	touch "$prepared"
 fi
 
-echo "[$(date)] Setting ownership and permissions..."
-chown -R core:core /var/services
-chmod -R 775 /var/services
-
-echo "[$(date)] Enabling and starting container services..."
-for service in nginx bazarr homebridge lidarr plex prowlarr radarr readarr sabnzbd sonarr n8n; do
-    echo "[$(date)] Starting container-$service.service"
-    systemctl enable "container-$service.service"
-    systemctl start "container-$service.service"
-done
-
-echo "[$(date)] Service initialization completed"
-
-# Disable this service after successful run (run once only)
+while IFS= read -r service; do
+	[ -n "$service" ] || continue
+	systemctl enable "container-$service.service"
+	systemctl start "container-$service.service"
+done </etc/homelab/services
 systemctl disable task-services.service
+echo 'Service initialization completed'

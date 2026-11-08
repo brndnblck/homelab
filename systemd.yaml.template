@@ -1,6 +1,24 @@
 ---
 systemd:
   units:
+    - name: var-mnt-tv.mount
+      enabled: true
+    - name: var-mnt-movies.mount
+      enabled: true
+    - name: var-mnt-music.mount
+      enabled: true
+    - name: var-mnt-books.mount
+      enabled: true
+    - name: var-mnt-software.mount
+      enabled: true
+    - name: var-mnt-games.mount
+      enabled: true
+    - name: var-mnt-services.mount
+      enabled: true
+    - name: task-storage-report.timer
+      enabled: true
+    - name: task-image-prune.timer
+      enabled: true
     - name: task-deps.service
       enabled: true
     - name: task-shared.service

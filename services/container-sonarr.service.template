@@ -2,20 +2,24 @@
 Description=Sonarr
 After=podman.service task-shared.service task-networks.service
 Requires=podman.service task-shared.service task-networks.service
+RequiresMountsFor=/var/mnt/tv
+BindsTo=var-mnt-tv.mount
+After=var-mnt-tv.mount
+StartLimitBurst=3
+StartLimitIntervalSec=300s
 
 [Service]
+Delegate=yes
+ExecStop=/usr/bin/podman stop --ignore --time 25 %n
 TimeoutStopSec=30
 TimeoutStartSec=120
 Type=simple
 Restart=on-failure
 RestartSec=10s
-StartLimitBurst=3
-StartLimitInterval=300s
 StandardError=journal
 StandardOutput=journal
-ExecStartPre=/usr/bin/podman pull lscr.io/linuxserver/sonarr:latest
-ExecStart=/usr/bin/podman run --replace --rm --name %n --cgroups=split \
-  --user 1000:1000 \
+ExecStartPre=/usr/bin/sh /var/scripts/check-shares.sh tv
+ExecStart=/usr/bin/podman run --pull=missing --replace --rm --name %n --cgroups=split \
   --network internal-net \
   --health-cmd="curl -f http://localhost:8989 || exit 1" \
   --health-interval=30s \
@@ -23,9 +27,11 @@ ExecStart=/usr/bin/podman run --replace --rm --name %n --cgroups=split \
   --health-retries=3 \
   --health-start-period=120s \
   -e TZ=America/Los_Angeles \
+  -e PUID=911 -e PGID=911 \
+  -p 8080:8989 \
   -v /var/services/sonarr:/config:z \
   -v /var/downloads:/downloads:z \
-  -v /mnt/tv:/tv:z \
+  -v /mnt/tv:/tv \
   lscr.io/linuxserver/sonarr:latest
 
 [Install]

@@ -2,21 +2,25 @@
 Description=Readarr
 After=podman.service task-shared.service task-networks.service
 Requires=podman.service task-shared.service task-networks.service
+RequiresMountsFor=/var/mnt/books
+BindsTo=var-mnt-books.mount
+After=var-mnt-books.mount
+StartLimitBurst=3
+StartLimitIntervalSec=300s
 
 [Service]
+Delegate=yes
+ExecStop=/usr/bin/podman stop --ignore --time 25 %n
 TimeoutStopSec=30
 TimeoutStartSec=120
 Type=simple
 Restart=on-failure
 RestartSec=10s
-StartLimitBurst=3
-StartLimitInterval=300s
 StandardOutput=journal
 StandardError=journal
-ExecStartPre=/usr/bin/podman pull lscr.io/linuxserver/readarr:develop
-ExecStart=/usr/bin/podman run --replace --rm --name %n --cgroups=split \
+ExecStartPre=/usr/bin/sh /var/scripts/check-shares.sh books
+ExecStart=/usr/bin/podman run --pull=missing --replace --rm --name %n --cgroups=split \
   --network internal-net \
-  --user 1000:1000 \
   --read-only-tmpfs \
   --security-opt no-new-privileges \
   --health-cmd="curl -f http://localhost:8787 || exit 1" \
@@ -25,9 +29,11 @@ ExecStart=/usr/bin/podman run --replace --rm --name %n --cgroups=split \
   --health-retries=3 \
   --health-start-period=120s \
   -e TZ=America/Los_Angeles \
+  -e PUID=911 -e PGID=911 \
+  -p 8086:8787 \
   -v /var/services/readarr:/config:z \
   -v /var/downloads:/downloads:z \
-  -v /mnt/books:/books:z \
+  -v /mnt/books:/books \
   ghcr.io/pennydreadful/bookshelf:hardcover-v0.4.20.91@sha256:eb2cb4a291e5f755e76d68c2be7e1da11f23724d6b9a5934b00388bd2e4212c6
 
 [Install]

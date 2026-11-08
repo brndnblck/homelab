@@ -11,7 +11,8 @@ A CoreOS homelab configuration using Butane to generate Ignition files for autom
 - **Security First**: Credential templating with 1Password integration
 - **CI/CD Pipeline**: Automated validation and security scanning
 - **Backup System**: Scheduled backups with SystemD timers
-- **Network Isolation**: Custom Podman networks with security boundaries
+- **Networking**: Named Podman bridges and compatible published service ports
+- **Storage Safeguards**: NAS mount dependencies, download reserve, disk/backlog reports, and bounded cleanup
 - **Shell Environment**: Custom ZSH profile with Starship prompt
 
 ## Getting Started
@@ -21,6 +22,9 @@ A CoreOS homelab configuration using Butane to generate Ignition files for autom
 - [1Password CLI](https://developer.1password.com/docs/cli/) installed and authenticated
 - [Butane](https://coreos.github.io/butane/) for config transpilation
 - Make for build automation
+- Python 3.11+ and [uv](https://docs.astral.sh/uv/) for locked rendering/validation dependencies
+- ShellCheck for shell validation; native systemd validation requires Fedora/Linux
+- macOS backup tests additionally need GNU tar and coreutils (`brew install gnu-tar coreutils`)
 
 ### Setup
 
@@ -28,6 +32,10 @@ A CoreOS homelab configuration using Butane to generate Ignition files for autom
 2. **Generate configs**: Run `make generate` to process templates with your credentials
 3. **Build ignition**: Run `make build` to create the CoreOS ignition file
 4. **Serve locally**: Run `make serve` to host the ignition file at `http://YOUR_IP:8080/latest`
+
+Review `config/storage.env` before provisioning. See [operations and existing-host
+rollout](docs/operations.md) for storage policies, ports/identities, backups, restore,
+and updating a running server. Generated files contain credentials.
 
 ### CoreOS Installation
 
@@ -85,7 +93,11 @@ make new service  # or timer, task
      enabled: true    # Auto-start on boot
    ```
 
-4. **Build and test**:
+4. Add the unit's file mapping to `storage.yaml.template`. For an application managed
+   by initial setup, also add its name to `config/services`. Media bind mounts need
+   mount dependencies and a `check-shares.sh` startup guard, following Lidarr's unit.
+
+5. **Build and test**:
    ```bash
    make generate  # Process templates with credentials
    make build     # Create ignition file and validate
@@ -135,7 +147,14 @@ make lint-yaml          # YAML syntax and style
 make lint-shell         # Shell script analysis  
 make validate-butane    # Butane config validation
 make validate-systemd   # SystemD service validation
+make validate-templates # Real file references, timers, service list, and NAS guards
+make test               # Backup/restore and configuration regression checks
 ```
+
+`make lint` fails on missing tools or failed checks. Native systemd verification
+requires a Linux environment with the Fedora service dependencies installed; CI
+provides this. On macOS, run the individual portable checks and use Linux for
+`make validate-systemd`.
 
 ## Available Commands
 
@@ -149,20 +168,26 @@ make validate-systemd   # SystemD service validation
 | `make lint` | Run all local linting and validation checks |
 | `make lint-yaml` | Lint YAML files with yamllint |
 | `make lint-shell` | Lint shell scripts with shellcheck |
+| `make lint-python` | Check Python scripts, tools, and tests with Ruff |
 | `make validate-butane` | Validate Butane configuration files |
 | `make validate-systemd` | Validate SystemD service files |
-| `make validate-templates` | Validate that referenced services have template files |
+| `make validate-templates` | Validate real sources, service lists, timers and NAS guards |
+| `make test` | Test configuration and backup/restore failure handling |
 | `make help` | Show available targets with descriptions |
 
 ## Project Structure
 
 ```
 ├── .github/workflows/    # CI/CD pipeline
+├── config/              # Storage policy and initialized service list
+├── docs/                # Operations and rollout notes
 ├── profile/             # Shell configuration
 ├── scripts/             # System scripts  
 ├── security/            # Credential templates
 ├── services/            # SystemD service definitions
 ├── templates/           # Resource generation templates
+├── tools/               # Portable rendering and cross-file validation
+├── tests/               # Configuration and backup/restore checks
 ├── default.env          # Centralized token configuration
 ├── storage.yaml.template     # File/directory provisioning
 ├── systemd.yaml.template     # Service management
@@ -173,7 +198,7 @@ make validate-systemd   # SystemD service validation
 ## Security
 
 - **Centralized Credentials**: All tokens managed in `default.env` with 1Password references
-- **Template Processing**: Dynamic credential injection during build
+- **Template Processing**: Credential injection without shell evaluation; private generated files
 - **Automated Scanning**: Checkov security analysis in CI pipeline
 - **No Secrets in Git**: Credentials resolved at build time, never committed
 
@@ -186,6 +211,7 @@ The CI pipeline automatically validates:
 - **Butane Configs**: Ignition generation validation
 - **Security Scan**: Secret detection and vulnerability analysis
 - **SystemD Services**: Service file validation
+- **State Recovery**: Real archive/SQLite restore round trips and failure cases
 
 ## Troubleshooting
 
@@ -239,8 +265,8 @@ make validate-butane
 make validate-systemd
 make validate-templates  # Check for missing service templates
 
-# Check specific service syntax
-systemd-analyze verify services/container-app.service.template
+# Validate properly named rendered services with real dependency checking
+make validate-systemd
 ```
 
 **Missing template files:**
@@ -260,4 +286,3 @@ make validate-templates  # Shows which templates are missing and how to create t
 - **Template tokens**: Use `{{TOKEN_NAME}}` format for all placeholders
 - **SystemD services**: Follow naming pattern `container-{app}.service` or `task-{name}.service`
 - **File paths**: Use absolute paths in configurations (`/var/services/`, `/etc/systemd/system/`)
-

@@ -1,40 +1,29 @@
 #!/bin/sh
-set -e
+set -eu
 
-echo "[$(date)] Starting homelab restore..."
-
-# Check if backup source is mounted
-if ! mountpoint -q /mnt/services; then
-    echo "[$(date)] ERROR: Backup source /mnt/services not mounted"
-    exit 1
-fi
-
-# Confirmation prompt
-echo "WARNING: This will overwrite current service data with backup data."
-echo "Current services will be stopped during restore."
-echo ""
-printf "Continue with restore? (yes/no): "
+# shellcheck source=state-common.sh
+. /var/scripts/state-common.sh
+exec 9>/run/homelab-state.lock
+flock --nonblock 9
+check_backup_mount
+id=${1:-$(cat "$BACKUPS/latest")}
+check_snapshot "$id"
+echo "Restore snapshot $id? Current state will be retained alongside /var/services."
+printf 'Type yes to stop containers and restore: '
 read -r confirm
-if [ "$confirm" != "yes" ]; then
-    echo "[$(date)] Restore cancelled by user"
-    exit 0
+[ "$confirm" = yes ] || exit 0
+
+units=$(running_services)
+stop_services
+previous="/var/services.before-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+mv "$SERVICES" "$previous"
+mkdir -m 0755 "$SERVICES"
+if ! restore_snapshot; then
+	echo "Restore failed. Containers remain stopped. Previous state: $previous" >&2
+	exit 1
 fi
-
-# Stop all container services before restore
-echo "[$(date)] Stopping container services..."
-systemctl stop container-*.service || true
-
-# Perform restore with same optimizations as backup
-echo "[$(date)] Starting rsync restore..."
-rsync -avh --progress --stats \
-  --delete \
-  --partial \
-  --partial-dir=.rsync-partial \
-  /mnt/services/ /var/services/
-
-# Start container services after restore
-echo "[$(date)] Starting container services..."
-systemctl start container-*.service || true
-
-echo "[$(date)] Restore completed successfully"
-echo "[$(date)] All container services have been restarted"
+if [ -n "$units" ]; then
+	# shellcheck disable=SC2086
+	systemctl start $units
+fi
+echo "Restored $id; previous state retained at $previous"
