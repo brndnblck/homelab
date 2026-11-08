@@ -2,6 +2,11 @@
 Description=Bazarr
 After=podman.service task-shared.service task-networks.service
 Requires=podman.service task-shared.service task-networks.service
+RequiresMountsFor=/var/mnt/tv /var/mnt/movies
+BindsTo=var-mnt-tv.mount var-mnt-movies.mount
+After=var-mnt-tv.mount var-mnt-movies.mount
+StartLimitBurst=3
+StartLimitIntervalSec=300s
 
 [Service]
 TimeoutStopSec=30
@@ -9,13 +14,10 @@ TimeoutStartSec=120
 Type=simple
 Restart=on-failure
 RestartSec=10s
-StartLimitBurst=3
-StartLimitInterval=300s
 StandardOutput=journal
 StandardError=journal
-ExecStartPre=/usr/bin/podman pull lscr.io/linuxserver/bazarr:latest
-ExecStart=/usr/bin/podman run --rm --replace --name %n --cgroups=split \
-  --user 1000:1000 \
+ExecStartPre=/usr/bin/sh /var/scripts/check-shares.sh tv movies
+ExecStart=/usr/bin/podman run --pull=missing --rm --replace --name %n --cgroups=split \
   --network internal-net \
   --health-cmd="curl -f http://localhost:6767 || exit 1" \
   --health-interval=30s \
@@ -23,9 +25,11 @@ ExecStart=/usr/bin/podman run --rm --replace --name %n --cgroups=split \
   --health-retries=3 \
   --health-start-period=120s \
   -e TZ=America/Los_Angeles \
+  -e PUID=911 -e PGID=911 \
+  -p 8087:6767 \
   -v /var/services/bazarr:/config:z \
-  -v /mnt/movies:/movies:z \
-  -v /mnt/tv:/tv:z \
+  -v /mnt/movies:/movies \
+  -v /mnt/tv:/tv \
   lscr.io/linuxserver/bazarr:latest
 
 [Install]

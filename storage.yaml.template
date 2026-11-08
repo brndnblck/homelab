@@ -1,6 +1,10 @@
 ---
 storage:
   directories:
+    - path: /etc/homelab
+      mode: 0700
+    - path: /etc/systemd/journald.conf.d
+      mode: 0755
     - path: /etc/smb
       mode: 0700
       user:
@@ -14,13 +18,13 @@ storage:
       group:
         name: root
     - path: /var/downloads
-      mode: 0777
+      mode: 0755
       user:
         name: core
       group:
         name: core
     - path: /var/services
-      mode: 0777
+      mode: 0755
       user:
         name: core
       group:
@@ -32,6 +36,42 @@ storage:
       group:
         name: core
   files:
+    - path: /etc/homelab/storage.env
+      mode: 0600
+      contents:
+        local: config/storage.env
+    - path: /etc/homelab/services
+      mode: 0644
+      contents:
+        local: config/services
+    - path: /etc/systemd/journald.conf.d/storage.conf
+      mode: 0644
+      contents:
+        inline: |
+          [Journal]
+          SystemMaxUse=1G
+          SystemKeepFree=10G
+          MaxRetentionSec=14day
+    - path: /var/scripts/check-shares.sh
+      mode: 0755
+      contents:
+        local: scripts/check-shares.sh
+    - path: /var/scripts/state-common.sh
+      mode: 0644
+      contents:
+        local: scripts/state-common.sh
+    - path: /var/scripts/configure-sab.py
+      mode: 0644
+      contents:
+        local: scripts/configure-sab.py
+    - path: /var/scripts/storage-report.py
+      mode: 0644
+      contents:
+        local: scripts/storage-report.py
+    - path: /var/scripts/prune-images.sh
+      mode: 0755
+      contents:
+        local: scripts/prune-images.sh
     - path: /etc/ssh/sshd_config.d/30-enable-passwords.conf
       mode: 0644
       overwrite: true
@@ -193,6 +233,50 @@ storage:
       mode: 0644
       contents:
         local: services/task-networks.service
+    - path: /etc/systemd/system/var-mnt-tv.mount
+      mode: 0644
+      contents:
+        local: services/var-mnt-tv.mount
+    - path: /etc/systemd/system/var-mnt-movies.mount
+      mode: 0644
+      contents:
+        local: services/var-mnt-movies.mount
+    - path: /etc/systemd/system/var-mnt-music.mount
+      mode: 0644
+      contents:
+        local: services/var-mnt-music.mount
+    - path: /etc/systemd/system/var-mnt-books.mount
+      mode: 0644
+      contents:
+        local: services/var-mnt-books.mount
+    - path: /etc/systemd/system/var-mnt-software.mount
+      mode: 0644
+      contents:
+        local: services/var-mnt-software.mount
+    - path: /etc/systemd/system/var-mnt-games.mount
+      mode: 0644
+      contents:
+        local: services/var-mnt-games.mount
+    - path: /etc/systemd/system/var-mnt-services.mount
+      mode: 0644
+      contents:
+        local: services/var-mnt-services.mount
+    - path: /etc/systemd/system/task-storage-report.service
+      mode: 0644
+      contents:
+        local: services/task-storage-report.service
+    - path: /etc/systemd/system/task-storage-report.timer
+      mode: 0644
+      contents:
+        local: services/task-storage-report.timer
+    - path: /etc/systemd/system/task-image-prune.service
+      mode: 0644
+      contents:
+        local: services/task-image-prune.service
+    - path: /etc/systemd/system/task-image-prune.timer
+      mode: 0644
+      contents:
+        local: services/task-image-prune.timer
     - path: /etc/systemd/system/task-services.service
       mode: 0644
       contents:

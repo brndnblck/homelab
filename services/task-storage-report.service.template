@@ -1,0 +1,13 @@
+[Unit]
+Description=Check Disk Space and Music Import Backlog
+After=container-lidarr.service container-sabnzbd.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/homelab/storage.env
+StateDirectory=homelab
+StateDirectoryMode=0700
+ExecStart=/usr/bin/python3 /var/scripts/storage-report.py
+UMask=0077
+StandardOutput=journal
+StandardError=journal

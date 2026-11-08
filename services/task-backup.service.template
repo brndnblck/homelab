@@ -2,9 +2,15 @@
 Description=Daily Backup
 After=task-shared.service
 Requires=task-shared.service
+RequiresMountsFor=/var/mnt/services
+BindsTo=var-mnt-services.mount
+After=var-mnt-services.mount
 
 [Service]
 Type=oneshot
+EnvironmentFile=/etc/homelab/storage.env
+TimeoutStartSec=2h
+TimeoutStopSec=10min
 ExecStart=/usr/bin/sh /var/scripts/backup.sh
 User=root
 StandardOutput=journal

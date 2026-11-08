@@ -1,86 +1,45 @@
+---
 name: Validation
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  yaml-lint:
+  validate:
     runs-on: ubuntu-latest
+    container: fedora:44
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Install yamllint
-      run: |
-        pip3 install --user yamllint
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-    
-    - name: Run YAML linting
-      run: make lint-yaml
-
-  shell-lint:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Install shellcheck
-      run: sudo apt-get update && sudo apt-get install -y shellcheck
-    
-    - name: Run shell script linting
-      run: make lint-shell
-
-  template-validation:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Validate template references
-      run: make validate-templates
-
-  butane-validation:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Install podman
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y podman || {
-          echo "Podman not available, using docker"
-          sudo apt-get install -y docker.io
-        }
-    
-    - name: Validate Butane configs
-      run: make validate-butane
-
-  systemd-validation:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Install systemd
-      run: sudo apt-get update && sudo apt-get install -y systemd
-    
-    - name: Validate SystemD services
-      run: make validate-systemd
-
+      - name: Install validation tools
+        run: >-
+          dnf install -y git make python3 curl openssl shellcheck systemd podman
+          rpm-ostree policycoreutils tar findutils diffutils
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install Butane 0.29.0
+        run: |
+          curl --fail --location --output /usr/local/bin/butane \
+            https://github.com/coreos/butane/releases/download/v0.29.0/butane-x86_64-unknown-linux-gnu
+          printf '%s  %s\n' \
+            53a20d820fbaa7fda4f1afd1814974badc8e448db4c151d3f1ba005dc29bc4c9 /usr/local/bin/butane \
+            | sha256sum --check
+          chmod 755 /usr/local/bin/butane
+      - name: Validate real provisioning inputs and backup behavior
+        run: make lint
   security-scan:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Security scan
-      uses: bridgecrewio/checkov-action@master
-      with:
-        directory: .
-        framework: yaml,secrets
-        quiet: true
-        soft_fail: false
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Security scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: yaml,secrets
+          quiet: true
+          soft_fail: false

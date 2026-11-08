@@ -2,6 +2,8 @@
 Description=Whisper
 After=podman.service task-networks.service
 Requires=podman.service task-networks.service
+StartLimitBurst=3
+StartLimitIntervalSec=300s
 
 [Service]
 TimeoutStopSec=30
@@ -9,12 +11,9 @@ TimeoutStartSec=120
 Type=simple
 Restart=on-failure
 RestartSec=10s
-StartLimitBurst=3
-StartLimitInterval=300s
 StandardError=journal
 StandardOutput=journal
-ExecStartPre=/usr/bin/podman pull onerahmet/openai-whisper-asr-webservice:latest
-ExecStart=/usr/bin/podman run --replace --rm --name %n --cgroups=split \
+ExecStart=/usr/bin/podman run --pull=missing --replace --rm --name %n --cgroups=split \
   --network internal-net \
   --user 1000:1000 \
   --read-only-tmpfs \

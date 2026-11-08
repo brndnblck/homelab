@@ -1,0 +1,17 @@
+[project]
+name = "homelab-config"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["pyyaml>=6.0.2,<7", "yamllint>=1.35,<2"]
+
+[dependency-groups]
+dev = ["ruff>=0.14,<1"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "validate"]

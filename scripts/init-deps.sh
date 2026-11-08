@@ -4,9 +4,10 @@ set -e
 echo "[$(date)] Starting dependency setup..."
 
 # Install packages
-PACKAGES="tree vim htop tmux zsh eza podman-compose wget2"
+PACKAGES="tree vim htop tmux zsh eza podman-compose wget2 python3 cifs-utils"
 echo "[$(date)] Installing packages: $PACKAGES"
-rpm-ostree install -y --apply-live "$PACKAGES"
+# shellcheck disable=SC2086
+rpm-ostree install -y --apply-live --idempotent --allow-inactive $PACKAGES
 
 # Set system time zone to Pacific
 echo "[$(date)] Setting timezone to America/Los_Angeles"
@@ -20,12 +21,20 @@ curl -fsSL https://starship.rs/install.sh | sh -s -- -y
 echo "[$(date)] Setting up download directories"
 mkdir -p /var/downloads/complete /var/downloads/incomplete /var/downloads/nzb /var/downloads/transcode
 mkdir -p /var/downloads/complete/tv /var/downloads/complete/movies /var/downloads/complete/music /var/downloads/complete/books /var/downloads/complete/games /var/downloads/complete/software /var/downloads/complete/other
-chown -R core:core /var/downloads
-chmod -R 775 /var/downloads
+# Only the known staging directories, never existing release directories or files.
+for path in /var/downloads /var/downloads/complete /var/downloads/incomplete /var/downloads/nzb \
+	/var/downloads/complete/tv /var/downloads/complete/movies /var/downloads/complete/music \
+	/var/downloads/complete/books /var/downloads/complete/games /var/downloads/complete/software \
+	/var/downloads/complete/other; do
+	chown 911:911 "$path"
+	chmod 775 "$path"
+done
+chown 1000:1000 /var/downloads/transcode
+chmod 775 /var/downloads/transcode
 
 # Allow unprivileged port binding (persist across reboots)
 echo "[$(date)] Configuring unprivileged port access"
-echo 'net.ipv4.ip_unprivileged_port_start=80' > /etc/sysctl.d/99-unprivileged-ports.conf
+echo 'net.ipv4.ip_unprivileged_port_start=80' >/etc/sysctl.d/99-unprivileged-ports.conf
 sysctl net.ipv4.ip_unprivileged_port_start=80
 
 # Create lock file and disable this service (run once only)

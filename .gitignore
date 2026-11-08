@@ -1,4 +1,7 @@
 build/
+.venv/
+__pycache__/
+.ruff_cache/
 
 # macOS
 .DS_Store
