@@ -53,6 +53,7 @@ class StateTests(unittest.TestCase):
                 text = text.replace(prefix, str(self.root) + prefix)
             (self.scripts / source.name).write_text(text)
         self.executable("systemctl", SYSTEMCTL)
+        self.executable("podman", '#!/bin/sh\nprintf \'%s\\n\' "$*" >>"$FIXTURE/podman-calls"\n')
         self.executable("findmnt", "#!/bin/sh\nprintf 'cifs //nas.lan/services\\n'\n")
         self.executable("restorecon", "#!/bin/sh\nexit 0\n")
         if not shutil.which("flock"):
@@ -116,6 +117,10 @@ class StateTests(unittest.TestCase):
         calls = (self.root / "calls").read_text()
         self.assertEqual(calls.count("stop container-lidarr.service"), 3)
         self.assertEqual(calls.count("start container-lidarr.service"), 3)
+        self.assertEqual(
+            (self.root / "podman-calls").read_text().splitlines(),
+            ["stop --ignore --time 60 container-lidarr.service"] * 3,
+        )
 
     def test_failed_archive_restarts_services_and_is_not_published(self) -> None:
         (self.bin / "tar").unlink()
@@ -137,6 +142,16 @@ class StateTests(unittest.TestCase):
         result = self.run_script("restore.sh", snapshot.name, answer="yes\n")
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("stop ", (self.root / "calls").read_text())
+
+    def test_container_shutdown_failure_does_not_publish_snapshot(self) -> None:
+        self.executable("podman", "#!/bin/sh\nexit 42\n")
+        result = self.run_script("backup.sh")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("Creating consistent snapshot", result.stdout)
+        self.assertFalse((self.backups / "latest").exists())
+        self.assertEqual(
+            json.loads((self.root / "running").read_text()), ["container-lidarr.service"]
+        )
 
     def test_wrong_mount_aborts_without_stopping_services(self) -> None:
         self.executable("findmnt", "#!/bin/sh\nprintf 'xfs /dev/sda4\\n'\n")

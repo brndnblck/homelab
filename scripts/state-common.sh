@@ -13,6 +13,15 @@ running_services() {
 	printf '%s\n' "$listing" | awk '{print $1}'
 }
 
+stop_services() {
+	[ -n "$units" ] || return 0
+	# Legacy units can exit while their containers remain in a separate cgroup.
+	# shellcheck disable=SC2086
+	systemctl stop $units
+	# shellcheck disable=SC2086
+	podman stop --ignore --time 60 $units
+}
+
 check_snapshot() {
 	case "$1" in
 	'' | *[!0-9TZ-]*)

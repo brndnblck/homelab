@@ -31,10 +31,7 @@ restart() {
 }
 trap restart EXIT
 trap 'exit 1' HUP INT TERM
-if [ -n "$units" ]; then
-	# shellcheck disable=SC2086
-	systemctl stop $units
-fi
+stop_services
 
 echo "Creating consistent snapshot $id (application containers are stopped)"
 tar --create --file "$stage/services.tar" --directory "$SERVICES" \

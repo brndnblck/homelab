@@ -9,6 +9,7 @@ StartLimitBurst=3
 StartLimitIntervalSec=300s
 
 [Service]
+ExecStop=/usr/bin/podman stop --ignore --time 25 %n
 TimeoutStopSec=30
 TimeoutStartSec=120
 Type=simple

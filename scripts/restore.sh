@@ -14,10 +14,7 @@ read -r confirm
 [ "$confirm" = yes ] || exit 0
 
 units=$(running_services)
-if [ -n "$units" ]; then
-	# shellcheck disable=SC2086
-	systemctl stop $units
-fi
+stop_services
 previous="/var/services.before-$(date -u +%Y%m%dT%H%M%SZ)-$$"
 mv "$SERVICES" "$previous"
 mkdir -m 0755 "$SERVICES"
